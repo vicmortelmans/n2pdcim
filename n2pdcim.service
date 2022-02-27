@@ -1,0 +1,15 @@
+[Unit]
+Description=Automatically process raw negative scans from USB mounted SD card (runs as local user)
+
+[Service]
+Type=simple
+User=vic
+Group=vic
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="PULSE_RUNTIME_PATH=/run/user/1000/pulse/"
+Restart=always
+RestartSec=1
+ExecStart=/usr/bin/python3 /usr/local/bin/n2pdcim.py
+
+[Install]
+WantedBy=multi-user.target

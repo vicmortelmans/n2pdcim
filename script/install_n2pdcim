@@ -1,0 +1,18 @@
+#! /bin/sh
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+echo "=> Installing n2pdcim script...\n"
+sudo cp n2pdcim.py /usr/local/bin/
+sudo chmod +x /usr/local/bin/n2pdcim.py
+
+echo "=> Starting n2pdcim service...\n"
+sudo cp n2pdcim.service /etc/systemd/system/
+sudo chmod 644 /etc/systemd/system/n2pdcim.service
+
+sudo systemctl start n2pdcim
+sudo systemctl enable n2pdcim
+
+echo "Success: n2pdcim scripts installed!\n"
