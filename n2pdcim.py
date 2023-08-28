@@ -34,8 +34,8 @@ os.makedirs(_TEMP, exist_ok=True)
 #path where the find automounted usb drives
 _USB = os.path.expanduser("~/Media/disk")
 
-#path of the n2p_2020 script
-_N2P_2020 = os.path.expanduser("~/bin/n2p_2020")
+#path of the n2p_2023 script
+_N2P_2023 = os.path.expanduser("~/bin/n2p_2023")
 
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d %(funcName)s] %(message)s', datefmt='%Y-%m-%d:%H:%M:%S', level=logging.DEBUG)
 
@@ -169,8 +169,8 @@ def unmount(usb_path):
 
 
 def start_processing_in_background(session):
-    subprocess.Popen(["/usr/bin/time", _N2P_2020], cwd=f"{_TEMP}/{session}")
-    logging.info(f"Started n2p_2020 in the background in {_TEMP}/{session}")
+    subprocess.Popen(["/usr/bin/time", _N2P_2023], cwd=f"{_TEMP}/{session}")
+    logging.info(f"Started n2p_2023 in the background in {_TEMP}/{session}")
 
 
 if __name__ == "__main__":
