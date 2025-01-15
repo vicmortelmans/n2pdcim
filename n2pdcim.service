@@ -9,7 +9,7 @@ Environment="XDG_RUNTIME_DIR=/run/user/1000"
 Environment="PULSE_RUNTIME_PATH=/run/user/1000/pulse/"
 Restart=always
 RestartSec=1
-ExecStart=/usr/bin/python3 /usr/local/bin/n2pdcim.py
+ExecStart=/usr/local/share/n2pdcim_venv/bin/python /usr/local/bin/n2pdcim.py
 
 [Install]
 WantedBy=multi-user.target

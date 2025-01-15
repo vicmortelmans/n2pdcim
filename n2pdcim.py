@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-import beepy
+#!/usr/bin/env python
 import datetime
 import exifread
 import glob
@@ -25,17 +24,17 @@ from bs4 import BeautifulSoup
 #file is moved, three confirmation beeps are heard and the user will unplug the camera. 
 
 #version
-_VERSION = 1.0
+_VERSION = 1.1
 
 #temporary workspace while downloaden/uploading files
 _TEMP = os.path.expanduser("~/Pictures")
 os.makedirs(_TEMP, exist_ok=True)
 
 #path where the find automounted usb drives
-_USB = os.path.expanduser("~/Media/disk")
+_USB = os.path.expanduser("/media")
 
-#path of the n2p_2023 script
-_N2P_2023 = os.path.expanduser("~/bin/n2p_2023")
+#path of the n2p script
+_N2P_ = os.path.expanduser("~/bin/n2p_2025")
 
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d %(funcName)s] %(message)s', datefmt='%Y-%m-%d:%H:%M:%S', level=logging.DEBUG)
 
@@ -55,8 +54,9 @@ def main():
             if usb_name:
 
                 #start a session: two-beep confirm and session dir in ~/Pictures
-                beepy.beep(sound="success")
+                os.system('spd-say "Starting to read card"')
                 session = new_session_name()
+                counter = 1
 
                 try:
 
@@ -66,12 +66,12 @@ def main():
 
                         download_result = download_and_delete(path, filename, session)
                         if download_result:
-                            beepy.beep(sound="ping")
+                            os.system(f'spd-say "{counter}"')
                         else:
-                            beepy.beep(sound="error")
+                            os.system('spd-say "an error has occurred"')
                         
                     unmount(usb_path)
-                    beepy.beep(sound="ready")
+                    os.system('spd-say "detach your card"')
                     start_processing_in_background(session)
 
                     logging.debug("Sleeping")
@@ -97,7 +97,7 @@ def main():
 
 def find_first_mounted_n2pdcim_usb_name():
 
-    files = glob.glob(f"{_USB}/n2p")
+    files = glob.glob(f"{_USB}/*/n2p")
     if files:
         usb_name = files[0].split('/')[-1]
         usb_path = files[0].split(usb_name)[0]
@@ -114,6 +114,7 @@ def new_session_name():
 def get_list_of_filenames_on_camera(usb_path):
     # returning a list of tuples (path, filename)
 
+    logging.info("Reading card...")
     list_of_filenames = []
     files = glob.glob(f"{usb_path}/DCIM/*/*.ARW")
 
@@ -164,12 +165,12 @@ def download_and_delete(path, filename, session):
 
 
 def unmount(usb_path):
-    os.system(f"pumount {usb_path}")
+    os.system(f"umount {usb_path}")
     logging.info(f"Unmounted {usb_path}")
 
 
 def start_processing_in_background(session):
-    subprocess.Popen(["/usr/bin/time", _N2P_2023], cwd=f"{_TEMP}/{session}")
+    subprocess.Popen(["/usr/bin/time", _N2P_], cwd=f"{_TEMP}/{session}")
     logging.info(f"Started n2p_2023 in the background in {_TEMP}/{session}")
 
 

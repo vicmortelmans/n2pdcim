@@ -5,6 +5,8 @@ set -e
 cd "$(dirname "$0")/.."
 
 echo "=> Installing n2pdcim script...\n"
+sudo python3 -m venv /usr/local/share/n2pdcim_venv
+sudo /usr/local/share/n2pdcim_venv/bin/pip install -r requirements.txt
 sudo cp n2pdcim.py /usr/local/bin/
 sudo chmod +x /usr/local/bin/n2pdcim.py
 
