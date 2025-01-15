@@ -10,6 +10,7 @@ sudo systemctl disable n2pdcim
 
 echo "=> Removing n2pdcim services...\n"
 sudo rm -rf /usr/local/bin/n2pdcim.py
+sudo rm -rf /usr/local/share/n2pdcim_venv
 sudo rm -rf /etc/systemd/system/n2pdcim.service
 
 echo "Success: n2pdcim service uninstalled!\n"
