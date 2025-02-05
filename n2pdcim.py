@@ -12,7 +12,6 @@ import subprocess
 import time
 import traceback
 import urllib.parse
-from bs4 import BeautifulSoup
 
 #this script is for downloading raw files from an USB drive with a card that is reserved
 #for digitizing black and white negative images. This card should contain a file in root
@@ -55,24 +54,32 @@ def main():
 
                 #start a session: two-beep confirm and session dir in ~/Pictures
                 os.system('spd-say "Starting to read card"')
-                session = new_session_name()
+                session = new_session_name(usb_name)
                 counter = 1
 
                 try:
+                    dirnames = get_list_of_dirnames_in_dcim(usb_path)
 
-                    filenames = get_list_of_filenames_on_camera(usb_path)
-                    
-                    for (path, filename) in filenames:
+                    for dirname in dirnames:
 
-                        download_result = download_and_delete(path, filename, session)
-                        if download_result:
-                            os.system(f'spd-say "{counter}"')
-                        else:
-                            os.system('spd-say "an error has occurred"')
+                        tempdirpath = f"{_TEMP}/{session}_{dirname}"
+                        filenames = get_list_of_filenames_on_camera(f"{usb_path}/DCIM/{dirname}")
                         
+                        if filenames:
+
+                            for (path, filename) in filenames:
+
+                                download_result = download_and_delete(path, filename, tempdirpath)
+                                if download_result:
+                                    os.system(f'spd-say "{counter}"')
+                                    counter += 1
+                                else:
+                                    os.system('spd-say "an error has occurred"')
+                                
+                            start_processing_in_background(tempdirpath)
+
                     unmount(usb_path)
                     os.system('spd-say "detach your card"')
-                    start_processing_in_background(session)
 
                     logging.debug("Sleeping")
 
@@ -99,24 +106,39 @@ def find_first_mounted_n2pdcim_usb_name():
 
     files = glob.glob(f"{_USB}/*/n2p")
     if files:
-        usb_name = files[0].split('/')[-1]
-        usb_path = files[0].split(usb_name)[0]
+        usb_name = files[0].split('/')[-2]  # is mount point name
+        usb_path = '/'.join(files[0].split('/')[0:-1])  # is mount point path 
         logging.info(f"'{usb_name}' is mounted!")
         return usb_name, usb_path
     else:
         return None, None
 
 
-def new_session_name():
-    return datetime.datetime.now().strftime('%Y%m%d%H%M')
+def new_session_name(usb_name):
+    return f"{usb_name}_{datetime.datetime.now().strftime('%Y%m%d%H%M')}"
+
+def get_list_of_dirnames_in_dcim(usb_path):
+    # returning a list of names, e.g ["100MSDCF", "101MSDCF"]
+
+    logging.info("Reading list of DCIM directories from card...")
+    list_of_dirnames = []
+    dirs = glob.glob(f"{usb_path}/DCIM/*")
+
+    for d in dirs:
+        dirname = d.split('/')[-1]
+        logging.debug(f"Directory on card: {dirname}")
+        list_of_dirnames.append(dirname)
+
+    logging.info(f"Retrieved a list of {len(list_of_dirnames)} DCIM directories on the card")
+    return list_of_dirnames
 
 
-def get_list_of_filenames_on_camera(usb_path):
+def get_list_of_filenames_on_camera(dirpath):
     # returning a list of tuples (path, filename)
 
     logging.info("Reading card...")
     list_of_filenames = []
-    files = glob.glob(f"{usb_path}/DCIM/*/*.ARW")
+    files = glob.glob(f"{dirpath}/*.ARW")
 
     for file in files:
 
@@ -129,23 +151,22 @@ def get_list_of_filenames_on_camera(usb_path):
     return list_of_filenames
 
 
-def download_and_delete(path, filename, session):
+def download_and_delete(path, filename, tempdirpath):
     # the file is downloaded and stored into
-    # {_TEMP}/{session}/{filename}
+    # {tempdirpath}/{filename}
     # and the original file is deleted
     file = f"{path}/{filename}"
 
     try:
         # download to {_TEMP}
-        os.makedirs(f"{_TEMP}/{session}", exist_ok=True)
-        dirpath = f"{_TEMP}/{session}"
+        os.makedirs(f"{tempdirpath}", exist_ok=True)
 
         logging.info(f"Going to move {file}")
         sleep = 1
         for attempt in range(10):
             try:
                 logging.info(f"Moving {file}")
-                shutil.move(file, dirpath)
+                shutil.move(file, tempdirpath)
             except Exception as e:
                 time.sleep(sleep)  # pause hoping things will normalize
                 logging.warning(f"Sleeping {sleep} seconds because of error trying to move {file} ({e}).")
@@ -155,7 +176,7 @@ def download_and_delete(path, filename, session):
                 break  # no error caught
         else:
             logging.critical(f"Retried 10 times copying {file}")
-        logging.info(f"Moved '{file}' to '{dirpath}'")
+        logging.info(f"Moved '{file}' to '{tempdirpath}'")
         return True
     except Exception as e:
         logging.error(f"Error downloading '{file}': {e}")
@@ -169,9 +190,9 @@ def unmount(usb_path):
     logging.info(f"Unmounted {usb_path}")
 
 
-def start_processing_in_background(session):
-    subprocess.Popen(["/usr/bin/time", _N2P_], cwd=f"{_TEMP}/{session}")
-    logging.info(f"Started n2p_2023 in the background in {_TEMP}/{session}")
+def start_processing_in_background(tempdirpath):
+    subprocess.Popen(["/usr/bin/time", _N2P_], cwd=f"{tempdirpath}")
+    logging.info(f"Started {_N2P_} in the background in {tempdirpath}")
 
 
 if __name__ == "__main__":

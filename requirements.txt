@@ -1,5 +1,3 @@
-beautifulsoup4==4.12.3
-beepy==1.0.7
 bs4==0.0.2
 certifi==2024.12.14
 charset-normalizer==3.4.1
